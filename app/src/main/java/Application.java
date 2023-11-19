@@ -1,6 +1,6 @@
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
+import java.sql.Statement;
 
 
 public class Application {
@@ -12,10 +12,30 @@ public class Application {
                 statement.execute(sql);
             }
 
-            var sql2 = "INSERT INTO users (username, phone) VALUES ('tommy', '123456789')";
-            try (var statement2 = conn.createStatement()) {
-                statement2.executeUpdate(sql2);
+            var sql2 = "INSERT INTO users (username, phone) VALUES (?, ?)";
+            try (var preparedStatement = conn.prepareStatement(sql2, Statement.RETURN_GENERATED_KEYS)) {
+                preparedStatement.setString(1, "Tommy");
+                preparedStatement.setString(2, "33333333");
+                preparedStatement.executeUpdate();
+
+                preparedStatement.setString(1, "Maria");
+                preparedStatement.setString(2, "44444444");
+                preparedStatement.executeUpdate();
+
+                var generatedKeys = preparedStatement.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    System.out.println(generatedKeys.getLong(1));
+                } else {
+                    throw new SQLException("DB have not returned an id after saving the entity");
+                }
             }
+
+            var sqlDel = "DELETE FROM users WHERE id = (?)";
+            try (var statement2 = conn.prepareStatement(sqlDel)) {
+                statement2.setInt(1, 1);
+                statement2.executeUpdate();
+            }
+
 
             var sql3 = "SELECT * FROM users";
             try (var statement3 = conn.createStatement()) {
